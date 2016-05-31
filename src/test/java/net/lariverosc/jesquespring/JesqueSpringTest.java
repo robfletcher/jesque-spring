@@ -1,6 +1,7 @@
 package net.lariverosc.jesquespring;
 
 import java.util.Arrays;
+
 import junit.framework.Assert;
 import net.greghaines.jesque.Job;
 import net.greghaines.jesque.client.Client;
@@ -12,11 +13,15 @@ import net.greghaines.jesque.worker.Worker;
 import net.lariverosc.jesquespring.job.MockJob;
 import net.lariverosc.jesquespring.job.MockJobArgs;
 import net.lariverosc.jesquespring.job.MockJobFail;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
@@ -25,33 +30,33 @@ import redis.clients.jedis.JedisPool;
  * @author Alejandro Riveros Cruz <lariverosc@gmail.com>
  */
 public class JesqueSpringTest {
+    
+    private Logger logger = LoggerFactory.getLogger(JesqueSpringTest.class);
 
 	private Client jesqueClient;
-	private Worker worker;
+	private Worker worker = null;
 	private FailureDAO failureDAO;
 	private KeysDAO keysDAO;
 	private QueueInfoDAO queueInfoDAO;
 	private WorkerInfoDAO workerInfoDAO;
-	private JedisPool jedisPool;
-
-	@BeforeClass
-	public void setUp() {
-		ApplicationContext applicationContext = new ClassPathXmlApplicationContext("classpath:test-context.xml");
-		jesqueClient = (Client) applicationContext.getBean("jesqueClient");
-		worker = (Worker) applicationContext.getBean("worker");
-		failureDAO = (FailureDAO) applicationContext.getBean("failureDAO");
-		keysDAO = (KeysDAO) applicationContext.getBean("keysDAO");
-		queueInfoDAO = (QueueInfoDAO) applicationContext.getBean("queueInfoDAO");
-		workerInfoDAO = (WorkerInfoDAO) applicationContext.getBean("workerInfoDAO");
-		jedisPool = (JedisPool) applicationContext.getBean("jedisPool");
-	}
+	private JedisPool jedisPool = null;
 
 	@BeforeMethod
 	public void cleanUpRedis() {
-		worker.togglePause(false);
-		Jedis jedis = jedisPool.getResource();
-		jedis.flushDB();
-		jedisPool.returnResource(jedis);
+	    if(null != worker && null != jedisPool) {
+    	    worker.togglePause(false);
+            Jedis jedis = jedisPool.getResource();
+            jedis.flushDB();
+            jedisPool.returnResource(jedis);
+	    }
+	    ApplicationContext applicationContext = new ClassPathXmlApplicationContext("classpath:test-context.xml");
+        jesqueClient = (Client) applicationContext.getBean("jesqueClient");
+        worker = (Worker) applicationContext.getBean("worker");
+        failureDAO = (FailureDAO) applicationContext.getBean("failureDAO");
+        keysDAO = (KeysDAO) applicationContext.getBean("keysDAO");
+        queueInfoDAO = (QueueInfoDAO) applicationContext.getBean("queueInfoDAO");
+        workerInfoDAO = (WorkerInfoDAO) applicationContext.getBean("workerInfoDAO");
+        jedisPool = (JedisPool) applicationContext.getBean("jedisPool");
 	}
 
 	@Test
@@ -76,6 +81,7 @@ public class JesqueSpringTest {
 		Job job = new Job(MockJob.class.getName(), new Object[]{});
 		for (int i = 1; i <= 5; i++) {
 			jesqueClient.enqueue("JESQUE_QUEUE", job);
+			logger.info("Job queued by class.");
 		}
 		worker.togglePause(false);
 		waitJob(5000);
@@ -90,6 +96,7 @@ public class JesqueSpringTest {
 		Job job = new Job("mockJob", new Object[]{});
 		for (int i = 1; i <= 5; i++) {
 			jesqueClient.enqueue("JESQUE_QUEUE", job);
+			logger.info("Job queued by bean id.");
 		}
 		worker.togglePause(false);
 		waitJob(5000);
@@ -111,7 +118,6 @@ public class JesqueSpringTest {
 		Job job = new Job(MockJob.class.getName(), new Object[]{});
 		jesqueClient.enqueue("JESQUE_QUEUE", job);
 		worker.togglePause(false);
-
 	}
 
 	@Test

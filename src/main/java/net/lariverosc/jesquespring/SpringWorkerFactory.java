@@ -34,6 +34,7 @@ public class SpringWorkerFactory implements Callable<WorkerImpl>, ApplicationCon
 	private Logger logger = LoggerFactory.getLogger(SpringWorkerFactory.class);
 	private final Config config;
 	private final Collection<String> queues;
+	private final String workerGroupName;
 	private ApplicationContext applicationContext;
 
 	/**
@@ -42,9 +43,10 @@ public class SpringWorkerFactory implements Callable<WorkerImpl>, ApplicationCon
 	 * @param config used to create a connection to Redis
 	 * @param queues the list of queues to poll
 	 */
-	public SpringWorkerFactory(final Config config, final Collection<String> queues) {
+	public SpringWorkerFactory(final Config config, final Collection<String> queues, String workerGroupName) {
 		this.config = config;
 		this.queues = queues;
+		this.workerGroupName = workerGroupName;
 	}
 
 
@@ -54,7 +56,7 @@ public class SpringWorkerFactory implements Callable<WorkerImpl>, ApplicationCon
 	@Override
 	public WorkerImpl call() {
 		logger.info("Create new Spring Worker");
-		WorkerImpl springWorker = new SpringWorker(this.config, this.queues);
+		WorkerImpl springWorker = new SpringWorker(this.config, this.queues, workerGroupName);
 		((SpringWorker) springWorker).setApplicationContext(this.applicationContext);
 		return springWorker;
 	}
