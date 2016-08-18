@@ -40,7 +40,8 @@
 			<util:set set-class="java.util.HashSet">
 				<value>JESQUE_QUEUE</value>
 			</util:set>
-		</constructor-arg> 
+		</constructor-arg>
+		<constructor-arg name="workerGroupName" value="testWorkerGroup"/>
 	</bean>
 
 <!--	<bean id="worker" class="net.lariverosc.jesquespring.SpringWorker" init-method="init" destroy-method="destroy">

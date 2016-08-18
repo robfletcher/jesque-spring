@@ -38,8 +38,8 @@ public class SpringWorker extends WorkerImpl implements ApplicationContextAware 
      * @param config used to create a connection to Redis
      * @param queues the list of queues to poll
      */
-    public SpringWorker(final Config config, final Collection<String> queues) {
-        super(config, queues, new SpringJobFactory());
+    public SpringWorker(final Config config, final Collection<String> queues, String workerGroupName) {
+        super(config, queues, new SpringJobFactory(), workerGroupName);
     }
 
     @Override
